@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Конструктор Музичних Флешок в Авто</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        /* Базові стилі та обнулення */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: #f4f7f6;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Ключові кадри для анімацій */
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.6); }
+            70% { box-shadow: 0 0 0 15px rgba(46, 204, 113, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+        }
+
+        /* Привітальний екран (Hero Section) */
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(-45deg, #1e1e2f, #2575fc, #1e293b, #3b82f6);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: white;
+            padding: 20px;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 30px;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease 0.2s forwards;
+        }
+
+        .scroll-btn {
+            background-color: #ff4757;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease 0.4s forwards;
+        }
+
+        .scroll-btn:hover {
+            background-color: #ff6b81;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+        }
+
+        /* Головний контейнер конструктора */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Стилі для блоків конфігуратора */
+        .step-block {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        
+        .step-block.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .step-block h2 {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: #222;
+            border-left: 5px solid #2575fc;
+            padding-left: 10px;
+        }
+
+        /* Сітка для варіантів вибору (Адаптивна) */
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        /* Картка варіанту */
+        .option-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #fff;
+        }
+        
+        .option-card:not(.disabled):hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            border-color: #a0c4ff;
+        }
+
+        .option-card img {
+            width: 100%;
+            height: 100px;
+            object-fit: contain;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            background-color: #eee; /* Заглушка, поки немає фото */
+        }
+
+        .option-card span {
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: block;
+        }
+
+        /* Прихований радіо-інпут */
+        .option-card input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        /* Стан: Обрано */
+        .option-card.selected {
+            border-color: #2575fc;
+            background-color: #f0f5ff;
+            box-shadow: 0 0 0 2px #2575fc; /* Яскраве виділення */
+            transform: scale(1.02);
+        }
+
+        /* Стан: Заблоковано */
+        .option-card.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background-color: #fafafa;
+            border-color: #e0e0e0;
+        }
+
+        .option-card.disabled img {
+            filter: grayscale(100%);
+        }
+
+        .badge-disabled {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #777;
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+
+        /* Поля вводу */
+        .input-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .text-input:focus {
+            border-color: #2575fc;
+        }
+
+        /* Блок ціни */
+        .price-summary {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .price-column {
+            text-align: center;
+            flex: 1;
+        }
+
+        .price-column:first-child {
+            border-right: 2px solid #e0e0e0;
+        }
+
+        .price-label {
+            display: block;
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .price-value {
+            display: block;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #2575fc;
+        }
+
+        /* Кнопка відправки замовлення */
+        .submit-btn {
+            width: 100%;
+            background-color: #2ecc71;
+            color: white;
+            padding: 18px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+            animation: pulseGlow 2s infinite;
+        }
+
+        .submit-btn:hover {
+            background-color: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
+        }
+
+        /* Адаптивність для маленьких екранів */
+        @media (max-width: 480px) {
+            .hero h1 { font-size: 1.8rem; }
+            .hero p { font-size: 1rem; }
+            .options-grid {
+                grid-template-columns: repeat(2, 1fr); /* По два елементи в ряд на мобільних */
+            }
+        }
+
+        /* Модальне вікно успіху */
+        .success-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .success-modal.show {
+            opacity: 1;
+        }
+        
+        .success-content {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            transform: scale(0.8) translateY(30px);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .success-modal.show .success-content {
+            transform: scale(1) translateY(0);
+        }
+        
+        .success-icon {
+            background: #2ecc71;
+            color: white;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 35px;
+            margin: 0 auto 20px;
+            animation: scaleIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
+        }
+        
+        @keyframes scaleIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+        
+        .success-content h2 { margin-bottom: 10px; color: #333; }
+        .success-content p { margin-bottom: 25px; color: #666; font-size: 1.1rem; }
+        
+        .close-btn {
+            background-color: #2575fc;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .close-btn:hover { background-color: #1e65db; }
+    </style>
+</head>
+<body>
+
+    <header class="hero">
+        <h1>Музика в Твоє Авто 🚗🎵</h1>
+        <p>Ніякої реклами та слабкого інтернету. Нижче ви можете налаштувати своє замовлення під себе.</p>
+        <button class="scroll-btn" onclick="scrollToConfigurator()">Налаштувати замовлення</button>
+    </header>
+
+    <main class="container" id="configurator">
+        <form id="orderForm" onsubmit="handleOrderSubmit(event)">
+
+            <section class="step-block">
+                <h2>1. Оберіть пристрій</h2>
+                <div class="options-grid">
+                    <label class="option-card selected">
+                        <input type="radio" name="device" value="Флешка" checked onchange="updateSelection(this)">
+                        <img src="./images/fleshka.png" alt="Флешка">
+                        <span>Флешка</span>
+                    </label>
+                    <div class="option-card disabled">
+                        <span class="badge-disabled">Недоступно</span>
+                        <img src="https://via.placeholder.com/150x100?text=CD+Disk" alt="Диск">
+                        <span>CD Диск</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="step-block">
+                <h2>2. Кількість пам'яті</h2>
+                <div class="options-grid">
+                    <div class="option-card disabled">
+                        <span class="badge-disabled">Недоступно</span>
+                        <img src="https://via.placeholder.com/150x100?text=500+MB" alt="500 МБ">
+                        <span>500 Мегабайт</span>
+                    </div>
+                    <label class="option-card">
+                        <input type="radio" name="memory" value="4ГБ" onchange="updateSelection(this)">
+                        <img src="https://via.placeholder.com/150x100?text=4+GB" alt="4 ГБ">
+                        <span>4 ГБ</span>
+                    </label>
+                    <label class="option-card">
+                        <input type="radio" name="memory" value="8ГБ" onchange="updateSelection(this)">
+                        <img src="https://via.placeholder.com/150x100?text=8+GB" alt="8 ГБ">
+                        <span>8 ГБ</span>
+                    </label>
+                </div>
+            </section>
+
+            <section class="step-block">
+                <h2>3. Музичний набір</h2>
+                <div class="options-grid">
+                    <label class="option-card">
+                        <input type="radio" name="music_genre" value="Хіти 90-тих" onchange="updateSelection(this)">
+                        <img src="https://via.placeholder.com/150x100?text=90s+Hits" alt="Хіти 90-тих">
+                        <span>Хіти 90-тих</span>
+                    </label>
+                    <label class="option-card">
+                        <input type="radio" name="music_genre" value="Хіти 80-тих" onchange="updateSelection(this)">
+                        <img src="https://via.placeholder.com/150x100?text=80s+Hits" alt="Хіти 80-тих">
+                        <span>Хіти 80-тих</span>
+                    </label>
+                    <label class="option-card">
+                        <input type="radio" name="music_genre" value="Хіти нульових" onchange="updateSelection(this)">
+                        <img src="https://via.placeholder.com/150x100?text=2000s+Hits" alt="Хіти нульових">
+                        <span>Хіти нульових</span>
+                    </label>
+                    <label class="option-card">
+                        <input type="radio" name="music_genre" value="Диско класика" onchange="updateSelection(this)">
+                        <img src="https://via.placeholder.com/150x100?text=Disco" alt="Диско класика">
+                        <span>Диско класика</span>
+                    </label>
+                    <label class="option-card">
+                        <input type="radio" name="music_genre" value="Класика шансон" onchange="updateSelection(this)">
+                        <img src="https://via.placeholder.com/150x100?text=Chanson" alt="Класика шансон">
+                        <span>Класика шансон</span>
+                    </label>
+                    <label class="option-card">
+                        <input type="radio" name="music_genre" value="Лише українські пісні" onchange="updateSelection(this)">
+                        <img src="https://via.placeholder.com/150x100?text=Ukrainian" alt="Лише українські пісні">
+                        <span>Лише українські пісні</span>
+                    </label>
+                    <label class="option-card">
+                        <input type="radio" name="music_genre" value="Сучасні пісні" onchange="updateSelection(this)">
+                        <img src="https://via.placeholder.com/150x100?text=Modern+Music" alt="Сучасні пісні">
+                        <span>Сучасні пісні</span>
+                    </label>
+                </div>
+            </section>
+
+            <section class="step-block">
+                <h2>4. Спосіб доставки</h2>
+                <div class="options-grid">
+                    <label class="option-card">
+                        <input type="radio" name="delivery" value="Нова Пошта" onchange="updateSelection(this)">
+                        <img src="https://via.placeholder.com/150x100?text=Nova+Poshta" alt="Нова Пошта">
+                        <span>Нова Пошта</span>
+                    </label>
+                    <label class="option-card">
+                        <input type="radio" name="delivery" value="Укр Пошта" onchange="updateSelection(this)">
+                        <img src="https://via.placeholder.com/150x100?text=Ukr+Poshta" alt="Укр Пошта">
+                        <span>Укр Пошта</span>
+                    </label>
+                </div>
+            </section>
+
+            <section class="step-block">
+                <h2>5. Інформація для зв'язку</h2>
+                <div class="input-wrapper">
+                    <input type="tel" id="phone" name="phone" class="text-input" placeholder="+380 (XX) XXX-XX-XX" maxlength="19" required>
+                    <input type="text" id="fullName" name="fullName" class="text-input" placeholder="Прізвище Ім'я По батькові" required>
+                </div>
+            </section>
+
+            <div class="price-summary step-block">
+                <div class="price-column">
+                    <span class="price-label">Доставка</span>
+                    <span class="price-value">за тарифами перевізника</span>
+                </div>
+                <div class="price-column">
+                    <span class="price-label">Товар</span>
+                    <span class="price-value" id="productPrice">0 грн</span>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">Оформити замовлення</button>
+        </form>
+    </main>
+
+    <!-- Модальне вікно успішного замовлення -->
+    <div id="successModal" class="success-modal">
+        <div class="success-content">
+            <div class="success-icon">✓</div>
+            <h2>Дякуємо за замовлення!</h2>
+            <p>Ми до Вас зателефонуємо найближчим часом.</p>
+            <button type="button" onclick="closeSuccessModal()" class="close-btn">Зрозуміло</button>
+        </div>
+    </div>
+
+    <script>
+        // Плавний скролл до конструктора при натисканні на кнопку в Hero
+        function scrollToConfigurator() {
+            document.getElementById('configurator').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Візуальне перемикання активного стану карток (радіо-кнопок)
+        function updateSelection(radioInput) {
+            // Знаходимо всі радіо-кнопки з цим самим ім'ям групи
+            const name = radioInput.name;
+            const radios = document.querySelectorAll(`input[name="${name}"]`);
+            
+            // Скидаємо клас selected для всіх карток у цій групі
+            radios.forEach(radio => {
+                radio.closest('.option-card').classList.remove('selected');
+            });
+            
+            // Додаємо клас selected поточній обраній картці
+            if (radioInput.checked) {
+                radioInput.closest('.option-card').classList.add('selected');
+            }
+            
+            // Оновлення ціни
+            if (name === 'memory') {
+                const priceElement = document.getElementById('productPrice');
+                if (radioInput.value === '4ГБ') {
+                    priceElement.textContent = '250 грн';
+                } else if (radioInput.value === '8ГБ') {
+                    priceElement.textContent = '300 грн';
+                }
+            }
+        }
+
+        // Анімація появи блоків при прокрутці сторінки (Intersection Observer)
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                    }
+                });
+            }, { threshold: 0.15 });
+
+            document.querySelectorAll('.step-block').forEach((el) => {
+                observer.observe(el);
+            });
+
+            // Маска вводу для номера телефону
+            const phoneInput = document.getElementById('phone');
+            phoneInput.addEventListener('input', function (e) {
+                // Якщо користувач передумав і видаляє префікс бекспейсом
+                if (e.inputType === 'deleteContentBackward' && e.target.value.length <= 4) {
+                    e.target.value = '';
+                    return;
+                }
+
+                let input = e.target.value.replace(/\D/g, '');
+                if (!input) return;
+
+                // Автоматичне підставлення +380 при наборі
+                if (input.length === 1 && input !== '3' && input !== '0') {
+                    input = '380' + input; 
+                } else if (input.startsWith('0')) {
+                    input = '38' + input;
+                }
+                
+                // Обмеження кількості цифр (код країни 3 + номер 9 = 12)
+                input = input.substring(0, 12);
+                
+                // Застосування формату: +380 (XX) XXX-XX-XX
+                let formatted = '+' + input.substring(0, 3);
+                if (input.length > 3) formatted += ' (' + input.substring(3, 5);
+                if (input.length > 5) formatted += ') ' + input.substring(5, 8);
+                if (input.length > 8) formatted += '-' + input.substring(8, 10);
+                if (input.length > 10) formatted += '-' + input.substring(10, 12);
+                
+                e.target.value = formatted;
+            });
+        });
+
+        // Обробка відправки форми
+        function handleOrderSubmit(event) {
+            event.preventDefault(); // Запобігаємо перезавантаженню сторінки
+
+            const formData = new FormData(event.target);
+            
+            // Валідація: перевіряємо чи вибрано все необхідне
+            if (!formData.get('memory')) {
+                alert('Будь ласка, оберіть кількість пам\'яті!');
+                return;
+            }
+            if (!formData.get('music_genre')) {
+                alert('Будь ласка, оберіть музичний набір!');
+                return;
+            }
+            if (!formData.get('delivery')) {
+                alert('Будь ласка, оберіть спосіб доставки!');
+                return;
+            }
+            
+            // Валідація номера телефону на повноту вводу
+            const phoneValue = formData.get('phone');
+            if (!phoneValue || phoneValue.length < 19) {
+                alert('Будь ласка, введіть номер телефону повністю!');
+                return;
+            }
+
+            // Валідація ПІБ (перевірка на наявність мінімум трьох слів)
+            const fullNameValue = formData.get('fullName');
+            const wordsCount = fullNameValue ? fullNameValue.trim().split(/\s+/).length : 0;
+            if (wordsCount < 3) {
+                alert('Будь ласка, введіть повністю Прізвище, Ім\'я та По батькові (мінімум 3 слова)!');
+                return;
+            }
+
+            // Збираємо дані в об'єкт для демонстрації
+            const order = {
+                device: formData.get('device'),
+                memory: formData.get('memory'),
+                genre: formData.get('music_genre'),
+                delivery: formData.get('delivery'),
+                phone: formData.get('phone'),
+                fullName: formData.get('fullName')
+            };
+        // Тут буде твій код відправки на бекенд, в Telegram-бот чи на пошту
+        
+        // Показуємо анімоване модальне вікно замість alert()
+        const modal = document.getElementById('successModal');
+        modal.style.display = 'flex';
+        setTimeout(() => {
+            modal.classList.add('show');
+        }, 10);
+        
+        event.target.reset(); // Очищаємо форму після успішного замовлення
+    } // це закриваються дужки функції handleOrderSubmit
+
+    function closeSuccessModal() {
+        const modal = document.getElementById('successModal');
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300); // Чекаємо на завершення CSS-анімації
+    }
+</script> 
+</body>
+</html>

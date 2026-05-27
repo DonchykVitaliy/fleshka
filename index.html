@@ -51,6 +51,13 @@
             padding: 20px;
         }
 
+        .hero-logo {
+            max-width: 950px;
+            width: 100%;
+            margin-bottom: 10px;
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
         .hero h1 {
             font-size: 2.5rem;
             margin-bottom: 15px;
@@ -272,6 +279,29 @@
             box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
         }
 
+        /* Блок додаткової інформації */
+        .info-block {
+            background-color: #e2e8f0;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 30px;
+            color: #4a5568;
+        }
+
+        .info-block h2 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: #2d3748;
+        }
+
+        .info-block ul {
+            list-style-type: disc;
+            padding-left: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
         /* Адаптивність для маленьких екранів */
         @media (max-width: 480px) {
             .hero h1 { font-size: 1.8rem; }
@@ -357,6 +387,7 @@
 <body>
 
     <header class="hero">
+        <img src="./images/logo.png" alt="Логотип" class="hero-logo">
         <h1>Музика в Твоє Авто 🚗🎵</h1>
         <p>Ніякої реклами та слабкого інтернету. Нижче ви можете налаштувати своє замовлення під себе.</p>
         <button class="scroll-btn" onclick="scrollToConfigurator()">Налаштувати замовлення</button>
@@ -386,12 +417,12 @@
                 <div class="options-grid">
                     <div class="option-card disabled">
                         <span class="badge-disabled">Недоступно</span>
-                        <img src="./images/500m.png" alt="500 МБ">
+                        <img src="./images/500mb.png" alt="500 МБ">
                         <span>500 Мегабайт</span>
                     </div>
                     <label class="option-card">
                         <input type="radio" name="memory" value="4ГБ" onchange="updateSelection(this)">
-                        <img src="./images/5gb.png" alt="4 ГБ">
+                        <img src="./images/4gb.png" alt="4 ГБ">
                         <span>4 ГБ</span>
                     </label>
                     <label class="option-card">
@@ -480,6 +511,19 @@
 
             <button type="submit" class="submit-btn">Оформити замовлення</button>
         </form>
+        
+        <section class="info-block">
+            <h2>Додаткова інформація</h2>
+            <ul>
+                <li>Відправка здійснюється без передоплати, оплата товару відбувається на пошті.</li>
+                <li>Перед відправкою всі музикальні пристрої проходять ретельну перевірку.</li>
+                <li>Термін доставки залежить від перевізника (пошти).</li>
+                <li>Магазин відправляє товар протягом 1-2 днів після замолвення.</li>
+                <li>Не соромтесь повідомляти про брак або несправності, ми цінуємо кожного покупця!</li>
+                <li>Гарантія на пристрій — 7 днів з моменту отримання.</li>
+                <li>Якщо у Вас з'явились додаткові питання, то залиште замовлення і ми самі зв'яжемося з Вами!</li>
+            </ul>
+        </section>
     </main>
 
     <!-- Модальне вікно успішного замовлення -->
@@ -607,25 +651,51 @@
                 return;
             }
 
-            // Збираємо дані в об'єкт для демонстрації
-            const order = {
-                device: formData.get('device'),
-                memory: formData.get('memory'),
-                genre: formData.get('music_genre'),
-                delivery: formData.get('delivery'),
-                phone: formData.get('phone'),
-                fullName: formData.get('fullName')
+            // Формуємо дані для відправки на пошту
+            const orderData = {
+                access_key: 'b4deee99-a2e9-4ad9-8419-23759cce05fb', // Вставте сюди свій ключ з пошти
+                subject: 'Нове замовлення: Музична флешка',
+                from_name: 'Конструктор Замовлень',
+                // Ці поля прийдуть вам у листі у вигляді зручного списку:
+                "Пристрій": formData.get('device'),
+                "Об'єм пам'яті": formData.get('memory'),
+                "Музичний набір": formData.get('music_genre'),
+                "Спосіб доставки": formData.get('delivery'),
+                "Телефон клієнта": formData.get('phone'),
+                "ПІБ клієнта": formData.get('fullName')
             };
-        // Тут буде твій код відправки на бекенд, в Telegram-бот чи на пошту
-        
-        // Показуємо анімоване модальне вікно замість alert()
-        const modal = document.getElementById('successModal');
-        modal.style.display = 'flex';
-        setTimeout(() => {
-            modal.classList.add('show');
-        }, 10);
-        
-        event.target.reset(); // Очищаємо форму після успішного замовлення
+
+            // Змінюємо текст кнопки, щоб користувач бачив процес завантаження
+            const submitBtn = event.target.querySelector('.submit-btn');
+            const originalBtnText = submitBtn.textContent;
+            submitBtn.textContent = 'Відправляємо...';
+            submitBtn.disabled = true;
+
+            // Відправляємо дані на пошту через сервіс Web3Forms
+            fetch('https://api.web3forms.com/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(orderData)
+            })
+            .then(async (response) => {
+                if (response.status === 200) {
+                    // Показуємо ваше анімоване модальне вікно успіху
+                    const modal = document.getElementById('successModal');
+                    modal.style.display = 'flex';
+                    setTimeout(() => modal.classList.add('show'), 10);
+                    event.target.reset(); // Очищаємо форму
+                } else {
+                    alert('Виникла помилка при відправці. Будь ласка, спробуйте пізніше.');
+                }
+            })
+            .catch(error => {
+                alert('Помилка з\'єднання. Перевірте інтернет.');
+            })
+            .finally(() => {
+                // Повертаємо кнопці звичний вигляд
+                submitBtn.textContent = originalBtnText;
+                submitBtn.disabled = false;
+            });
     } // це закриваються дужки функції handleOrderSubmit
 
     function closeSuccessModal() {
